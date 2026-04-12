@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DAC350F32F8B4AE500309AEE /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = DAC350F22F8B4AE500309AEE /* .gitignore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		8238913E2F8B376400227749 /* Tappy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tappy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAC350F22F8B4AE500309AEE /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,7 @@
 		823891352F8B376400227749 = {
 			isa = PBXGroup;
 			children = (
+				DAC350F22F8B4AE500309AEE /* .gitignore */,
 				823891402F8B376400227749 /* Tappy */,
 				8238913F2F8B376400227749 /* Products */,
 			);
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DAC350F32F8B4AE500309AEE /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

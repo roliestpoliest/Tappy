@@ -17,3 +17,6 @@ xcuserdata/
 # Archives
 *.xcarchive
 *.xcbkptlist
+
+# config
+*.xcconfig
