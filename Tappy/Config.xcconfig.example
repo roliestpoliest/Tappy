@@ -1,0 +1,11 @@
+//
+//  Config.xcconfig
+//  Tappy
+//
+//  Created by ujwal joshi on 4/11/26.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
+DEVELOPMENT_TEAM = YOUR_TEAM_ID_HERE
+
