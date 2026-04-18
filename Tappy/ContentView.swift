@@ -9,6 +9,10 @@ import SwiftUI
 import ApplicationServices
 
 struct ContentView: View {
+    //! debugging
+    @State private var didStart = false
+    let clickMonitor = MouseClickMonitor()
+    
     let clicker = AutoClicker()
     let mouseMover = BezierMouseMover()
     
@@ -17,7 +21,15 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
+            
             Text("Hello, world!")
+                .task {
+                    guard !didStart else { return }
+                    didStart = true
+                    
+                    clickMonitor.start()
+                    print("Mouse monitor started")
+                }
             
             Text("Has accesibility pernmission: \(AXIsProcessTrusted() ? "YES" : "NO")")
             Text("Hit the escape key to stop the auto clicker")
@@ -30,7 +42,7 @@ struct ContentView: View {
                     clicker.startClicking(at: point, interval: 0.2)
                 }
 
-                Button("Move mouse to middle of screen ith animation") {
+                Button("Move mouse to middle of screen with animation") {
                     mouseMover.move(to: point, duration: 0.6)
                 }
             }
