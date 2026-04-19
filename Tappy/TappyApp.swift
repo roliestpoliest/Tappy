@@ -13,5 +13,6 @@ struct TappyApp: App {
         WindowGroup {
             ContentView()
         }
+        .defaultSize(width: 380, height: 500)
     }
 }
