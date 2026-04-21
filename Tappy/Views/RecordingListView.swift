@@ -6,16 +6,20 @@ struct RecordingListView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
                 Text("Recordings")
-                    .font(.callout.bold())
-                    .fontDesign(.rounded)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.0)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
             }
             .padding(.horizontal, 14)
-            .padding(.top, 14)
-            .padding(.bottom, 6)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
 
             List(selection: $selectedRecording) {
                 if recordings.isEmpty {
@@ -25,14 +29,19 @@ struct RecordingListView: View {
                         .listRowBackground(Color.clear)
                 } else {
                     ForEach(recordings) { recording in
-                        RecordingRowView(recording: recording)
+                        let isSelected = selectedRecording == recording
+                        RecordingRowView(recording: recording, isSelected: isSelected)
                             .tag(recording)
+                            .listRowInsets(EdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8))
+                            .listRowSeparator(.hidden)
                             .listRowBackground(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedRecording == recording
-                                          ? Color.accentColor.opacity(0.12)
-                                          : Color.clear)
-                                    .padding(.horizontal, 4)
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(isSelected ? Color.accentColor.opacity(0.31) : Color.clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.accentColor.opacity(0.6), lineWidth: 1)
+                                            .opacity(isSelected ? 1 : 0)
+                                    )
                             )
                     }
                     .onDelete { indexSet in
@@ -45,33 +54,39 @@ struct RecordingListView: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
+        .background(Color(red: 0.961, green: 0.937, blue: 0.902))
     }
 }
 
 struct RecordingRowView: View {
     let recording: MacroRecording
+    var isSelected: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(recording.name)
-                .font(.callout.bold())
-                .fontDesign(.rounded)
-                .lineLimit(1)
-            HStack(spacing: 6) {
-                Text(recording.duration.mmss)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Text("·")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Text("\(recording.events.count) events")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        HStack(spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor : Color.accentColor.opacity(0.15))
+                    .frame(width: 30, height: 30)
+                Image(systemName: "waveform")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(recording.name)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(red: 0.239, green: 0.310, blue: 0.369))
+                    .lineLimit(1)
+                Text("\(recording.events.count) actions")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.accentColor)
             }
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 10)
     }
 }
 
@@ -95,7 +110,6 @@ struct RecordButton: View {
                             : .default,
                         value: pulse)
 
-                // Invisible "Record" placeholder keeps width stable during timer
                 ZStack {
                     Text("Record")
                         .hidden()

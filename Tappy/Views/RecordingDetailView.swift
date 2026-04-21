@@ -1,3 +1,4 @@
+import CoreGraphics
 import SwiftUI
 
 // MARK: - Display Event (groups down/up pairs for readability)
@@ -5,8 +6,8 @@ import SwiftUI
 struct DisplayEvent: Identifiable {
     enum Kind {
         case single(MacroEvent)
-        case click(down: MacroEvent, up: MacroEvent)    // left or right click pair
-        case keyPress(down: MacroEvent, up: MacroEvent) // key down + up pair
+        case click(down: MacroEvent, up: MacroEvent)
+        case keyPress(down: MacroEvent, up: MacroEvent)
     }
 
     let kind: Kind
@@ -55,12 +56,31 @@ struct DisplayEvent: Identifiable {
         switch kind {
         case .single(let e): return e.displayTitle
         case .click(let d, _):
-            let name = d.type == .mouseLeftDown ? "Left Click" : "Right Click"
-            if let p = d.position { return "\(name)  (\(Int(p.x)), \(Int(p.y)))" }
-            return name
+            return d.type == .mouseLeftDown ? "Left Click" : "Right Click"
         case .keyPress(let d, _):
             guard let code = d.keyCode else { return "Key" }
             return MacroEvent.keyCodeNames[code] ?? "Key \(code)"
+        }
+    }
+
+    var displaySubtitle: String? {
+        switch kind {
+        case .single(let e):
+            if e.type == .scrollWheel {
+                return "Δx \(e.scrollDeltaX)  Δy \(e.scrollDeltaY)"
+            }
+            return nil
+        case .click(let d, _):
+            if let p = d.position { return "at (\(Int(p.x)), \(Int(p.y)))" }
+            return nil
+        case .keyPress(let d, _):
+            let flags = CGEventFlags(rawValue: d.eventFlags)
+            var mods: [String] = []
+            if flags.contains(.maskCommand)   { mods.append("⌘") }
+            if flags.contains(.maskShift)     { mods.append("⇧") }
+            if flags.contains(.maskAlternate) { mods.append("⌥") }
+            if flags.contains(.maskControl)   { mods.append("⌃") }
+            return mods.isEmpty ? nil : mods.joined()
         }
     }
 
@@ -107,25 +127,21 @@ struct TimelineCropView: View {
                 let w = max(geo.size.width, 1)
 
                 ZStack(alignment: .leading) {
-                    // Background track
                     RoundedRectangle(cornerRadius: 3)
                         .fill(.primary.opacity(0.08))
                         .frame(height: 6)
 
-                    // Trim region — left (will be deleted)
                     if startFraction > 0 {
                         Rectangle()
                             .fill(Color.red.opacity(0.25))
                             .frame(width: startFraction * w, height: 6)
                     }
 
-                    // Keep region
                     Rectangle()
                         .fill(Color.accentColor.opacity(0.35))
                         .frame(width: max(0, (endFraction - startFraction) * w), height: 6)
                         .offset(x: startFraction * w)
 
-                    // Trim region — right (will be deleted)
                     if endFraction < 1 {
                         Rectangle()
                             .fill(Color.red.opacity(0.25))
@@ -133,7 +149,6 @@ struct TimelineCropView: View {
                             .offset(x: endFraction * w)
                     }
 
-                    // Start handle
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color.accentColor)
                         .frame(width: 4, height: 22)
@@ -147,7 +162,6 @@ struct TimelineCropView: View {
                                 }
                         )
 
-                    // End handle
                     RoundedRectangle(cornerRadius: 2)
                         .fill(Color.accentColor)
                         .frame(width: 4, height: 22)
@@ -206,6 +220,7 @@ struct ActionsPanel: View {
             Divider()
             eventList
         }
+        .background(Color(red: 0.929, green: 0.906, blue: 0.859))
         .animation(.easeInOut(duration: 0.2), value: cropMode)
     }
 
@@ -217,28 +232,25 @@ struct ActionsPanel: View {
                 if isEditingName {
                     TextField("Name", text: $editedName)
                         .textFieldStyle(.plain)
-                        .font(.headline.bold())
-                        .fontDesign(.rounded)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color(red: 0.239, green: 0.310, blue: 0.369))
                         .onSubmit { commitName() }
                         .onAppear { editedName = recording.name }
                 } else {
                     Text(recording.name)
-                        .font(.headline.bold())
-                        .fontDesign(.rounded)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Color(red: 0.239, green: 0.310, blue: 0.369))
                         .lineLimit(1)
                         .onTapGesture(count: 2) {
                             editedName = recording.name
                             isEditingName = true
                         }
                 }
-                Text("\(recording.events.count) events · \(recording.duration.mmss)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text("\(recording.events.count) actions")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.accentColor)
             }
             Spacer()
-            Text(recording.createdAt, style: .date)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
 
             Button {
                 if cropMode {
@@ -249,13 +261,18 @@ struct ActionsPanel: View {
                 }
             } label: {
                 Image(systemName: cropMode ? "xmark.circle.fill" : "crop")
-                    .foregroundStyle(cropMode ? Color.secondary : Color.primary)
+                    .font(.system(size: 13))
+                    .foregroundStyle(cropMode ? Color.secondary : Color(red: 0.239, green: 0.310, blue: 0.369).opacity(0.6))
+                    .frame(width: 32, height: 32)
             }
             .buttonStyle(.plain)
+            .background(Color.accentColor.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             .help(cropMode ? "Cancel Crop" : "Crop Recording")
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.top, 18)
+        .padding(.trailing, 24)
+        .padding(.bottom, 10)
+        .padding(.leading, 24)
     }
 
     // MARK: - Crop Bar
@@ -288,17 +305,18 @@ struct ActionsPanel: View {
     private var eventList: some View {
         ScrollViewReader { proxy in
             List {
-                ForEach(displayEvents) { de in
+                ForEach(Array(displayEvents.enumerated()), id: \.element.id) { index, de in
                     let isActive = de.involvedIDs.contains { $0 == player.currentEventID }
                     let outsideCrop = cropMode && (
                         de.timestamp < cropStart * recording.duration ||
                         de.timestamp > cropEnd * recording.duration
                     )
 
-                    EventRowView(displayEvent: de, isActive: isActive, dimmed: outsideCrop)
+                    EventRowView(step: index + 1, displayEvent: de, isActive: isActive, dimmed: outsideCrop)
                         .id(de.id)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
-                        .listRowBackground(isActive ? de.color.opacity(0.12) : Color.clear)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 14, bottom: 4, trailing: 14))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) { deleteDisplayEvent(de) } label: {
                                 Label("Delete", systemImage: "trash")
@@ -307,6 +325,7 @@ struct ActionsPanel: View {
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
             .onChange(of: player.currentEventID) { _, id in
                 guard let id else { return }
                 if let de = displayEvents.first(where: { $0.involvedIDs.contains(id) }) {
@@ -357,31 +376,75 @@ struct ActionsPanel: View {
 // MARK: - Event Row
 
 struct EventRowView: View {
+    let step: Int
     let displayEvent: DisplayEvent
     let isActive: Bool
     let dimmed: Bool
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: displayEvent.icon)
-                .font(.caption.bold())
-                .foregroundStyle(displayEvent.color)
+        HStack(spacing: 14) {
+            Text("\(step)")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 22, height: 22)
-                .background(displayEvent.color.opacity(0.12), in: Circle())
+                .background(Color.accentColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+                .fixedSize()
 
-            Text(displayEvent.displayTitle)
-                .font(displayEvent.isMouseMove ? .caption.monospaced() : .callout.monospaced())
-                .foregroundStyle(displayEvent.isMouseMove ? .secondary : .primary)
-                .lineLimit(1)
+            Image(systemName: displayEvent.icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(displayEvent.color)
+                .frame(width: 28, height: 28)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(displayEvent.displayTitle)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Color(red: 0.239, green: 0.310, blue: 0.369))
+                    .lineLimit(1)
+
+                if let subtitle = displayEvent.displaySubtitle {
+                    Text(subtitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color.accentColor)
+                        .lineLimit(1)
+                }
+            }
 
             Spacer()
 
-            Text(String(format: "%.2fs", displayEvent.timestamp))
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.tertiary)
+            HStack(spacing: 4) {
+                if isActive {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 5, height: 5)
+                }
+                Text(String(format: "%.1fs", displayEvent.timestamp))
+                    .font(.system(size: 10))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(Color(red: 0.682, green: 0.741, blue: 0.792).opacity(0.2), in: Capsule())
         }
-        .padding(.vertical, displayEvent.isMouseMove ? 2 : 4)
-        .opacity(dimmed ? 0.3 : 1.0)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(isActive
+                    ? Color.accentColor.opacity(0.25)
+                    : Color(red: 1.0, green: 0.973, blue: 0.914))
+                .shadow(color: Color.black.opacity(0.2), radius: 1.5, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(
+                    isActive
+                        ? Color.accentColor.opacity(0.6)
+                        : Color(red: 0.682, green: 0.741, blue: 0.792).opacity(0.4),
+                    lineWidth: 1
+                )
+        )
+        .opacity(dimmed ? 0.35 : 1.0)
     }
 }
 
@@ -395,5 +458,6 @@ struct EmptyActionsView: View {
             description: Text("Select a recording from the sidebar, or press Record to capture new inputs.")
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(red: 0.929, green: 0.906, blue: 0.859))
     }
 }

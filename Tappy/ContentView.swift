@@ -24,44 +24,43 @@ struct ContentView: View {
                 AccessibilityPromptView()
                     .frame(minWidth: 500, minHeight: 420)
             } else {
-                trifoldLayout
+                mainLayout
             }
         }
         .onAppear { loadRecordings() }
     }
 
-    private var trifoldLayout: some View {
-        HStack(spacing: 0) {
-            if showSidebar {
-                RecordingListView(
-                    recordings: $recordings,
-                    selectedRecording: $selectedRecording
-                )
-                .frame(width: 200)
-                .transition(.move(edge: .leading).combined(with: .opacity))
+    private var mainLayout: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                if showSidebar {
+                    RecordingListView(
+                        recordings: $recordings,
+                        selectedRecording: $selectedRecording
+                    )
+                    .frame(width: 189)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
 
-                Divider()
-            }
-
-            Group {
-                if let index = selectedIndex {
-                    ActionsPanel(recording: $recordings[index])
-                } else {
-                    EmptyActionsView()
+                    Divider()
                 }
+
+                Group {
+                    if let index = selectedIndex {
+                        ActionsPanel(recording: $recordings[index])
+                    } else {
+                        EmptyActionsView()
+                    }
+                }
+                .frame(minWidth: 260, maxWidth: .infinity)
             }
-            .frame(minWidth: 260, maxWidth: .infinity)
 
-            Divider()
-
-            PlaybackPanel(
+            PlaybackBar(
                 recording: selectedIndex.map { recordings[$0] },
                 config: $config
             )
-            .frame(width: 268)
         }
         .animation(.spring(duration: 0.25), value: showSidebar)
-        .frame(minWidth: 720, minHeight: 480)
+        .frame(minWidth: 580, minHeight: 480)
         .navigationTitle("Tappy")
         .onAppear {
             escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
