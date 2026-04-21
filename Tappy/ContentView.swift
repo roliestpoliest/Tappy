@@ -8,17 +8,14 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(AccessibilityService.self) var accessibility
+    
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            // Temporary view
+            Text("Accessiblity granted: \(accessibility.isGranted.description)")
+            
         }
-        .padding()
+        .padding(200)
     }
-}
-
-#Preview {
-    ContentView()
 }

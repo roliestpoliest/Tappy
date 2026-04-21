@@ -7,11 +7,17 @@
 
 import SwiftUI
 
-@main
+@main 
 struct TappyApp: App {
+    @State private var accessibilityService = AccessibilityService()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(accessibilityService)
+                .onAppear {
+                    accessibilityService.requestAccess()
+                }
         }
     }
 }
