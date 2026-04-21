@@ -20,3 +20,6 @@ xcuserdata/
 
 # config
 *.xcconfig
+
+# Claude
+.claude
