@@ -19,6 +19,11 @@ final class AccessibilityService {
         let options = [key: true] as NSDictionary
         isGranted = AXIsProcessTrustedWithOptions(options)
         if !isGranted {
+            // Open the Accessibility pane directly — the AXIsProcessTrustedWithOptions
+            // prompt is unreliable for sandboxed apps during development.
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                NSWorkspace.shared.open(url)
+            }
             startPolling()
         }
     }
