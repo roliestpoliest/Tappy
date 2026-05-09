@@ -9,10 +9,6 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            // Temporary view
-            Text("Hello World")
-        }
-        .padding(200)
+        ServiceDebugView()
     }
 }
