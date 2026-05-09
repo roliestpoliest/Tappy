@@ -8,13 +8,10 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(AccessibilityService.self) var accessibility
-    
     var body: some View {
         VStack {
             // Temporary view
-            Text("Accessiblity granted: \(accessibility.isGranted.description)")
-            
+            Text("Hello World")
         }
         .padding(200)
     }
