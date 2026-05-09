@@ -7,11 +7,15 @@
 
 import SwiftUI
 
-@main 
+@main
 struct TappyApp: App {
+    @State private var appState = AppStateService()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(appState)
+                .task { appState.loadRecordings() }
         }
     }
 }
