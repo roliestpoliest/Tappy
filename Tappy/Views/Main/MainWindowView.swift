@@ -6,16 +6,13 @@ struct MainWindowView: View {
     var body: some View {
         VStack(spacing: 0) {
             TitleBarView()
-            VStack(spacing: 12) {
-                Text("Main Window")
-                    .font(.paneTitle)
-                    .foregroundStyle(palette.textPrimary)
-                Text("stub — replaced in Step 5.1")
-                    .font(.rowSubtitle)
-                    .foregroundStyle(palette.textSecondary)
+            HStack(spacing: 0) {
+                SidebarView()
+                MainPaneView()
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            PlaybackBarView()
         }
         .background(palette.windowBg)
+        .clipShape(RoundedRectangle(cornerRadius: Metrics.windowCornerRadius))
     }
 }
