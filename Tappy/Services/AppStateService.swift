@@ -12,11 +12,19 @@ final class AppStateService {
     var selectedRecording: MacroRecording? = nil
     var playbackConfig: PlaybackConfig = .default
 
+    var isCollapsed: Bool = false
+    var colorScheme: AppColorScheme = .system
+
     init() {
         accessibility = AccessibilityService()
         storage = StorageService()
         recorder = EventRecorderService()
         player = EventPlayerService()
+
+        if let raw = UserDefaults.standard.string(forKey: "colorScheme"),
+           let stored = AppColorScheme(rawValue: raw) {
+            colorScheme = stored
+        }
     }
 
     func loadRecordings() {
@@ -53,5 +61,18 @@ final class AppStateService {
 
     var canPlay: Bool {
         accessibility.isGranted && selectedRecording != nil && !recorder.isRecording
+    }
+
+    func toggleCollapsed() {
+        isCollapsed.toggle()
+    }
+
+    func toggleColorScheme() {
+        colorScheme = (colorScheme == .dark) ? .light : .dark
+        persistColorScheme()
+    }
+
+    private func persistColorScheme() {
+        UserDefaults.standard.set(colorScheme.rawValue, forKey: "colorScheme")
     }
 }
