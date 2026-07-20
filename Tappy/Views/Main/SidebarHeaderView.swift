@@ -7,7 +7,7 @@ struct SidebarHeaderView: View {
     var body: some View {
         HStack(spacing: 8) {
             Button(action: { appState.toggleCollapsed() }) {
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(palette.textSecondary)
                     .frame(width: 18, height: 18)
