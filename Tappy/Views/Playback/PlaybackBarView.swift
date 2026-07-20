@@ -7,6 +7,9 @@ struct PlaybackBarView: View {
     var body: some View {
         HStack(spacing: 10) {
             RecordButtonView(size: 36)
+                .disabled(appState.player.isPlaying)
+                .opacity(appState.player.isPlaying ? 0.4 : 1.0)
+                .animation(.easeInOut(duration: 0.15), value: appState.player.isPlaying)
                 .padding(.trailing, 6)
 
             Group {
