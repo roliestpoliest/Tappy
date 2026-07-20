@@ -17,7 +17,18 @@ struct MainPaneHeaderView: View {
             }
             Spacer()
             HStack(spacing: 8) {
-                subtleIconButton(system: "crop", disabled: true, action: {})
+                subtleIconButton(
+                    system: "crop",
+                    isActive: appState.isCropping,
+                    disabled: appState.selectedRecording == nil,
+                    action: {
+                        if appState.isCropping {
+                            appState.cancelCropping()
+                        } else {
+                            appState.beginCropping()
+                        }
+                    }
+                )
                 subtleIconButton(
                     system: appState.colorScheme == .dark ? "sun.max.fill" : "moon.fill",
                     action: { appState.toggleColorScheme() }
@@ -35,16 +46,18 @@ struct MainPaneHeaderView: View {
     @ViewBuilder
     private func subtleIconButton(
         system: String,
+        isActive: Bool = false,
         disabled: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: system)
                 .font(.system(size: 14, weight: .regular))
-                .foregroundStyle(palette.textSecondary)
+                .foregroundStyle(isActive ? .white : palette.textSecondary)
                 .frame(width: 32, height: 32)
                 .background(
-                    RoundedRectangle(cornerRadius: 9).fill(palette.buttonSubtle)
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(isActive ? palette.accent : palette.buttonSubtle)
                 )
         }
         .buttonStyle(.plain)

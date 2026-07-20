@@ -1,12 +1,15 @@
 import SwiftUI
 
 struct ActionRowView: View {
-    let event: MacroEvent
+    let step: ActionStep
     let index: Int
-    let nextTimestamp: TimeInterval?
+    let nextStepStart: TimeInterval?
     let isRunning: Bool
+    let isDeleteEnabled: Bool
+    let onDelete: () -> Void
 
     @Environment(\.palette) private var palette
+    @State private var isHovered: Bool = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -18,7 +21,7 @@ struct ActionRowView: View {
                     RoundedRectangle(cornerRadius: 6).fill(palette.buttonSubtle.opacity(0.6))
                 )
 
-            Image(systemName: event.type.sfSymbolName)
+            Image(systemName: step.iconName)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(palette.textSecondary)
                 .frame(width: 28, height: 28)
@@ -27,19 +30,21 @@ struct ActionRowView: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(event.type.displayName)
+                Text(step.displayName)
                     .font(.rowTitle)
                     .tracking(-0.13)
                     .foregroundStyle(palette.textPrimary)
-                Text(detailString)
+                Text(step.detailString)
                     .font(.rowSubtitle)
                     .foregroundStyle(palette.textSecondary)
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .help(step.detailString)
             }
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 if isRunning {
                     Circle()
                         .fill(palette.textSecondary)
@@ -48,6 +53,18 @@ struct ActionRowView: View {
                 Text(delayLabel)
                     .font(.duration)
                     .foregroundStyle(palette.textSecondary)
+
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(palette.recordRed)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!isDeleteEnabled)
+                .opacity(isHovered ? (isDeleteEnabled ? 1 : 0.4) : 0)
+                .help("Delete this action")
             }
         }
         .padding(.horizontal, 14)
@@ -64,31 +81,17 @@ struct ActionRowView: View {
                     lineWidth: 1
                 )
         )
-    }
-
-    private var detailString: String {
-        switch event.type {
-        case .leftMouseDown, .leftMouseUp,
-             .rightMouseDown, .rightMouseUp,
-             .middleMouseDown, .middleMouseUp,
-             .leftMouseDragged, .rightMouseDragged:
-            if let p = event.position { return "at (\(Int(p.x)), \(Int(p.y)))" }
-            return "—"
-        case .scrollWheel:
-            let dx = event.scrollDeltaX ?? 0
-            let dy = event.scrollDeltaY ?? 0
-            return String(format: "Δx %.0f, Δy %.0f", dx, dy)
-        case .keyDown, .keyUp, .flagsChanged:
-            if let chars = event.characters, !chars.isEmpty {
-                return "\"\(chars)\""
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isHovered = hovering
             }
-            return "keycode \(event.keyCode ?? 0)"
         }
     }
 
     private var delayLabel: String {
-        guard let next = nextTimestamp else { return "—" }
-        let delta = max(0, next - event.timestamp)
+        guard let next = nextStepStart else { return "—" }
+        let delta = max(0, next - step.endTimestamp)
         return delta < 0.1
             ? String(format: "%.0fms", delta * 1000)
             : String(format: "%.1fs", delta)

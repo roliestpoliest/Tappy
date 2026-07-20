@@ -29,9 +29,14 @@ struct RecordingRowView: View {
                         .tracking(-0.13)
                         .foregroundStyle(palette.textPrimary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
+                        .help(recording.name)
                     Text("\(recording.eventCount) actions")
                         .font(.rowSubtitle)
                         .foregroundStyle(palette.textSecondary)
+                    Text(recording.createdAt.formatted(date: .abbreviated, time: .omitted))
+                        .font(.rowSubtitle)
+                        .foregroundStyle(palette.textSecondary.opacity(0.8))
                 }
 
                 Spacer(minLength: 0)
@@ -51,6 +56,9 @@ struct RecordingRowView: View {
             Button("Rename…") {
                 draftName = recording.name
                 isRenaming = true
+            }
+            Button("Copy") {
+                try? appState.duplicateRecording(recording)
             }
             Button("Delete", role: .destructive) {
                 try? appState.deleteRecording(recording)
