@@ -6,22 +6,34 @@ struct ActionListView: View {
     @Environment(AppStateService.self) private var appState
     @Environment(\.palette) private var palette
 
+    private var steps: [ActionStep] {
+        ActionStep.buildSteps(from: recording.events)
+    }
+
+    private var runningStepID: UUID? {
+        guard appState.player.isPlaying,
+              appState.selectedRecording?.id == recording.id,
+              appState.player.currentEventIndex < recording.events.count else { return nil }
+        let currentEventID = recording.events[appState.player.currentEventIndex].id
+        return steps.first(where: { $0.underlyingEventIDs.contains(currentEventID) })?.id
+    }
+
     var body: some View {
+        let allSteps = steps
+        let currentStepID = runningStepID
         ScrollViewReader { proxy in
             ScrollView(.vertical) {
                 LazyVStack(spacing: 3) {
-                    ForEach(Array(recording.events.enumerated()), id: \.element.id) { index, event in
+                    ForEach(Array(allSteps.enumerated()), id: \.element.id) { index, step in
                         ActionRowView(
-                            event: event,
+                            step: step,
                             index: index,
-                            nextTimestamp: index + 1 < recording.events.count
-                                ? recording.events[index + 1].timestamp
+                            nextStepStart: index + 1 < allSteps.count
+                                ? allSteps[index + 1].startTimestamp
                                 : nil,
-                            isRunning: appState.player.isPlaying
-                                && appState.player.currentEventIndex == index
-                                && appState.selectedRecording?.id == recording.id
+                            isRunning: step.id == currentStepID
                         )
-                        .id(event.id)
+                        .id(step.id)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -30,8 +42,13 @@ struct ActionListView: View {
             .onChange(of: appState.player.currentEventIndex) { _, newIndex in
                 guard appState.player.isPlaying,
                       newIndex < recording.events.count else { return }
+                let currentEventID = recording.events[newIndex].id
+                let stepsNow = steps
+                guard let target = stepsNow.first(where: {
+                    $0.underlyingEventIDs.contains(currentEventID)
+                }) else { return }
                 withAnimation(.easeInOut(duration: 0.2)) {
-                    proxy.scrollTo(recording.events[newIndex].id, anchor: .center)
+                    proxy.scrollTo(target.id, anchor: .center)
                 }
             }
         }
