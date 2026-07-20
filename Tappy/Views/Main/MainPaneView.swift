@@ -12,7 +12,12 @@ struct MainPaneView: View {
             } else {
                 EmptyStateView(message: "Select a recording to view its actions.")
             }
+            if appState.isCropping, let recording = appState.selectedRecording {
+                CropEditorView(recording: recording)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.22), value: appState.isCropping)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(palette.mainPaneBg)
     }

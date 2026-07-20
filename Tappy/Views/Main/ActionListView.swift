@@ -10,6 +10,14 @@ struct ActionListView: View {
         ActionStep.buildSteps(from: recording.events)
     }
 
+    private func dimOpacity(for step: ActionStep) -> Double {
+        guard appState.isCropping, let range = appState.cropRange else { return 1.0 }
+        // Dim only steps entirely outside the selected range.
+        let entirelyOutside = step.endTimestamp < range.lowerBound
+            || step.startTimestamp > range.upperBound
+        return entirelyOutside ? 0.35 : 1.0
+    }
+
     private var runningStepID: UUID? {
         guard appState.player.isPlaying,
               appState.selectedRecording?.id == recording.id,
@@ -32,7 +40,7 @@ struct ActionListView: View {
                                 ? allSteps[index + 1].startTimestamp
                                 : nil,
                             isRunning: step.id == currentStepID,
-                            isDeleteEnabled: !appState.player.isPlaying,
+                            isDeleteEnabled: !appState.player.isPlaying && !appState.isCropping,
                             onDelete: {
                                 try? appState.deleteEvents(
                                     step.underlyingEventIDs,
@@ -41,6 +49,7 @@ struct ActionListView: View {
                             }
                         )
                         .id(step.id)
+                        .opacity(dimOpacity(for: step))
                     }
                 }
                 .padding(.horizontal, 16)

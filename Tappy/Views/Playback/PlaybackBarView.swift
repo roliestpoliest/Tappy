@@ -20,9 +20,9 @@ struct PlaybackBarView: View {
                 LoopButtonView()
                 RepeatStepperView()
             }
-            .disabled(appState.recorder.isRecording)
-            .opacity(appState.recorder.isRecording ? 0.4 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: appState.recorder.isRecording)
+            .disabled(playbackBarDisabled)
+            .opacity(playbackBarDisabled ? 0.4 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: playbackBarDisabled)
         }
         .frame(height: Metrics.playbackBarHeight)
         .padding(.horizontal, 20)
@@ -30,6 +30,10 @@ struct PlaybackBarView: View {
         .overlay(alignment: .top) {
             Rectangle().fill(palette.borderDefault).frame(height: 1)
         }
+    }
+
+    private var playbackBarDisabled: Bool {
+        appState.recorder.isRecording || appState.isCropping
     }
 
     private var divider: some View {
