@@ -29,6 +29,8 @@ struct RecordingRowView: View {
                         .tracking(-0.13)
                         .foregroundStyle(palette.textPrimary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
+                        .help(recording.name)
                     Text("\(recording.eventCount) actions")
                         .font(.rowSubtitle)
                         .foregroundStyle(palette.textSecondary)
