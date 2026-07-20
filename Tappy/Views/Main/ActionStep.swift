@@ -1,4 +1,34 @@
+import CoreGraphics
 import Foundation
+
+enum MouseButton: Equatable {
+    case left, right, middle
+
+    var displayName: String {
+        switch self {
+        case .left:   return "Left Click"
+        case .right:  return "Right Click"
+        case .middle: return "Middle Click"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .left:   return "cursorarrow.click"
+        case .right:  return "cursorarrow.click.2"
+        case .middle: return "cursorarrow.click"
+        }
+    }
+}
+
+struct MouseClickStep: Identifiable, Equatable {
+    let id: UUID
+    let button: MouseButton
+    let position: CGPoint?
+    let startTimestamp: TimeInterval
+    let endTimestamp: TimeInterval
+    let underlyingEventIDs: [UUID]
+}
 
 struct TypedTextStep: Identifiable, Equatable {
     let id: UUID
@@ -21,36 +51,41 @@ enum ActionStep: Identifiable, Equatable {
     case single(MacroEvent)
     case typing(TypedTextStep)
     case keyPress(KeyPressStep)
+    case mouseClick(MouseClickStep)
 
     var id: UUID {
         switch self {
-        case .single(let e):   return e.id
-        case .typing(let g):   return g.id
-        case .keyPress(let p): return p.id
+        case .single(let e):     return e.id
+        case .typing(let g):     return g.id
+        case .keyPress(let p):   return p.id
+        case .mouseClick(let c): return c.id
         }
     }
 
     var startTimestamp: TimeInterval {
         switch self {
-        case .single(let e):   return e.timestamp
-        case .typing(let g):   return g.startTimestamp
-        case .keyPress(let p): return p.startTimestamp
+        case .single(let e):     return e.timestamp
+        case .typing(let g):     return g.startTimestamp
+        case .keyPress(let p):   return p.startTimestamp
+        case .mouseClick(let c): return c.startTimestamp
         }
     }
 
     var endTimestamp: TimeInterval {
         switch self {
-        case .single(let e):   return e.timestamp
-        case .typing(let g):   return g.endTimestamp
-        case .keyPress(let p): return p.endTimestamp
+        case .single(let e):     return e.timestamp
+        case .typing(let g):     return g.endTimestamp
+        case .keyPress(let p):   return p.endTimestamp
+        case .mouseClick(let c): return c.endTimestamp
         }
     }
 
     var underlyingEventIDs: [UUID] {
         switch self {
-        case .single(let e):   return [e.id]
-        case .typing(let g):   return g.underlyingEventIDs
-        case .keyPress(let p): return p.underlyingEventIDs
+        case .single(let e):     return [e.id]
+        case .typing(let g):     return g.underlyingEventIDs
+        case .keyPress(let p):   return p.underlyingEventIDs
+        case .mouseClick(let c): return c.underlyingEventIDs
         }
     }
 }
@@ -126,6 +161,25 @@ extension ActionStep {
 
             // Not a typing candidate — flush any open typing group first.
             flushGroup()
+
+            // Try to consolidate an adjacent mouseDown + matching mouseUp
+            // into a single .mouseClick step. Drags break adjacency naturally.
+            if let button = mouseButton(forDown: event.type),
+               let upType = matchingMouseUp(for: event.type),
+               i + 1 < events.count,
+               events[i + 1].type == upType {
+                let mouseUp = events[i + 1]
+                steps.append(.mouseClick(MouseClickStep(
+                    id: UUID(),
+                    button: button,
+                    position: event.position,
+                    startTimestamp: event.timestamp,
+                    endTimestamp: mouseUp.timestamp,
+                    underlyingEventIDs: [event.id, mouseUp.id]
+                )))
+                i += 2
+                continue
+            }
 
             // Try to consolidate an isolated keyDown + adjacent matching keyUp
             // into a single .keyPress step (e.g. Return, Escape, arrows).
@@ -208,6 +262,24 @@ extension ActionStep {
         }
     }
 
+    private static func mouseButton(forDown type: MacroEventType) -> MouseButton? {
+        switch type {
+        case .leftMouseDown:   return .left
+        case .rightMouseDown:  return .right
+        case .middleMouseDown: return .middle
+        default:               return nil
+        }
+    }
+
+    private static func matchingMouseUp(for type: MacroEventType) -> MacroEventType? {
+        switch type {
+        case .leftMouseDown:   return .leftMouseUp
+        case .rightMouseDown:  return .rightMouseUp
+        case .middleMouseDown: return .middleMouseUp
+        default:               return nil
+        }
+    }
+
     static func keyIconName(keyCode: UInt16) -> String {
         switch keyCode {
         case 36, 76: return "return"
@@ -228,17 +300,19 @@ extension ActionStep {
 extension ActionStep {
     var iconName: String {
         switch self {
-        case .single(let e):   return e.type.sfSymbolName
-        case .typing:          return "keyboard"
-        case .keyPress(let p): return Self.keyIconName(keyCode: p.keyCode)
+        case .single(let e):     return e.type.sfSymbolName
+        case .typing:            return "keyboard"
+        case .keyPress(let p):   return Self.keyIconName(keyCode: p.keyCode)
+        case .mouseClick(let c): return c.button.iconName
         }
     }
 
     var displayName: String {
         switch self {
-        case .single(let e):   return e.type.displayName
-        case .typing:          return "Type"
-        case .keyPress:        return "Press"
+        case .single(let e):     return e.type.displayName
+        case .typing:            return "Type"
+        case .keyPress:          return "Press"
+        case .mouseClick(let c): return c.button.displayName
         }
     }
 
@@ -253,6 +327,9 @@ extension ActionStep {
             return "\"\(escaped)\""
         case .keyPress(let p):
             return "\"\(p.label)\""
+        case .mouseClick(let c):
+            if let p = c.position { return "at (\(Int(p.x)), \(Int(p.y)))" }
+            return "\u{2014}"
         }
     }
 
