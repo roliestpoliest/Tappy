@@ -6,6 +6,9 @@ struct RecordingRowView: View {
     @Environment(AppStateService.self) private var appState
     @Environment(\.palette) private var palette
 
+    @State private var isRenaming: Bool = false
+    @State private var draftName: String = ""
+
     private var isSelected: Bool { appState.selectedRecording?.id == recording.id }
 
     var body: some View {
@@ -45,9 +48,21 @@ struct RecordingRowView: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
-            Button("Rename…") { }
+            Button("Rename…") {
+                draftName = recording.name
+                isRenaming = true
+            }
             Button("Delete", role: .destructive) {
                 try? appState.deleteRecording(recording)
+            }
+        }
+        .alert("Rename recording", isPresented: $isRenaming) {
+            TextField("Name", text: $draftName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                let trimmed = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty, trimmed != recording.name else { return }
+                try? appState.renameRecording(recording, to: trimmed)
             }
         }
     }

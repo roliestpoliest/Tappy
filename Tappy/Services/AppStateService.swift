@@ -67,6 +67,19 @@ final class AppStateService {
         isCollapsed.toggle()
     }
 
+    func toggleRecording() {
+        if recorder.isRecording {
+            let name = "Recording \(Date().formatted(date: .abbreviated, time: .shortened))"
+            try? stopRecordingAndSave(name: name)
+        } else {
+            guard accessibility.isGranted else {
+                accessibility.requestAccess()
+                return
+            }
+            recorder.startRecording()
+        }
+    }
+
     func toggleColorScheme() {
         colorScheme = (colorScheme == .dark) ? .light : .dark
         persistColorScheme()
