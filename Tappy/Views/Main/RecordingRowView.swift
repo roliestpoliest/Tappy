@@ -57,6 +57,9 @@ struct RecordingRowView: View {
                 draftName = recording.name
                 isRenaming = true
             }
+            Button("Copy") {
+                try? appState.duplicateRecording(recording)
+            }
             Button("Delete", role: .destructive) {
                 try? appState.deleteRecording(recording)
             }

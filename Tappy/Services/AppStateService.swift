@@ -60,6 +60,19 @@ final class AppStateService {
         if selectedRecording?.id == updated.id { selectedRecording = updated }
     }
 
+    func duplicateRecording(_ recording: MacroRecording) throws {
+        let copy = MacroRecording(
+            id: UUID(),
+            name: "Copy of \(recording.name)",
+            createdAt: Date(),
+            duration: recording.duration,
+            events: recording.events
+        )
+        try storage.saveRecording(copy)
+        recordings = try storage.loadAllRecordings()
+        selectedRecording = copy
+    }
+
     func renameRecording(_ recording: MacroRecording, to newName: String) throws {
         var updated = recording
         updated.name = newName
