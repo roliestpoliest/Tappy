@@ -34,6 +34,9 @@ struct RecordingRowView: View {
                     Text("\(recording.eventCount) actions")
                         .font(.rowSubtitle)
                         .foregroundStyle(palette.textSecondary)
+                    Text(recording.createdAt.formatted(date: .abbreviated, time: .omitted))
+                        .font(.rowSubtitle)
+                        .foregroundStyle(palette.textSecondary.opacity(0.8))
                 }
 
                 Spacer(minLength: 0)
