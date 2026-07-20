@@ -31,7 +31,14 @@ struct ActionListView: View {
                             nextStepStart: index + 1 < allSteps.count
                                 ? allSteps[index + 1].startTimestamp
                                 : nil,
-                            isRunning: step.id == currentStepID
+                            isRunning: step.id == currentStepID,
+                            isDeleteEnabled: !appState.player.isPlaying,
+                            onDelete: {
+                                try? appState.deleteEvents(
+                                    step.underlyingEventIDs,
+                                    from: recording
+                                )
+                            }
                         )
                         .id(step.id)
                     }

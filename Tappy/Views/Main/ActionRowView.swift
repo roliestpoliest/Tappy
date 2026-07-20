@@ -5,8 +5,11 @@ struct ActionRowView: View {
     let index: Int
     let nextStepStart: TimeInterval?
     let isRunning: Bool
+    let isDeleteEnabled: Bool
+    let onDelete: () -> Void
 
     @Environment(\.palette) private var palette
+    @State private var isHovered: Bool = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -41,7 +44,7 @@ struct ActionRowView: View {
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 if isRunning {
                     Circle()
                         .fill(palette.textSecondary)
@@ -50,6 +53,18 @@ struct ActionRowView: View {
                 Text(delayLabel)
                     .font(.duration)
                     .foregroundStyle(palette.textSecondary)
+
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(palette.recordRed)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!isDeleteEnabled)
+                .opacity(isHovered ? (isDeleteEnabled ? 1 : 0.4) : 0)
+                .help("Delete this action")
             }
         }
         .padding(.horizontal, 14)
@@ -66,6 +81,12 @@ struct ActionRowView: View {
                     lineWidth: 1
                 )
         )
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.12)) {
+                isHovered = hovering
+            }
+        }
     }
 
     private var delayLabel: String {

@@ -46,6 +46,17 @@ final class AppStateService {
         if selectedRecording?.id == recording.id { selectedRecording = nil }
     }
 
+    func deleteEvents(_ eventIDs: [UUID], from recording: MacroRecording) throws {
+        let removalSet = Set(eventIDs)
+        guard !removalSet.isEmpty else { return }
+        var updated = recording
+        updated.events.removeAll { removalSet.contains($0.id) }
+        updated.duration = updated.events.last?.timestamp ?? 0
+        try storage.updateRecording(updated)
+        recordings = try storage.loadAllRecordings()
+        if selectedRecording?.id == updated.id { selectedRecording = updated }
+    }
+
     func renameRecording(_ recording: MacroRecording, to newName: String) throws {
         var updated = recording
         updated.name = newName
